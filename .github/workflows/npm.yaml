@@ -30,7 +30,7 @@ jobs:
           with-dependencies: true
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: sbom
           path: ${{ steps.sbom.outputs.sbom-path }}

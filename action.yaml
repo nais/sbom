@@ -78,7 +78,7 @@ runs:
       shell: bash
 
     - name: Identify ecosystem
-      if: ${{ inputs.with-dependencies == 'true' && inputs.ecosystem == '' }}
+      if: ${{ inputs.with-dependencies == 'true' && inputs.byo-sbom == '' && inputs.ecosystem == '' }}
       run: |
         if [[ "$(find ${{ env.CONTEXT }} -type f -name 'package-lock.json')" ]]; then
          echo ECOSYSTEM="node=npm" >> $GITHUB_ENV
@@ -187,7 +187,7 @@ runs:
     - name: Attest with byo-sbom
       if: ${{ inputs.byo-sbom != '' }}
       run: |
-        if [ ! -f ${{ inputs.context }}/inputs.byo-sbom }} ]; then
+        if [ ! -f ${{ inputs.byo-sbom }} ]; then
           echo "File ${{ inputs.byo-sbom }} not found!"
           exit 1
         fi
@@ -195,11 +195,12 @@ runs:
           echo "File ${{ inputs.byo-sbom }} is not a json file!"
           exit 1
         fi
-        echo "SBOM=${{ inputs.byo-sbom }}" >> $GITHUB_ENV
-        echo "Using BYOSBOM ${{ env.SBOM }}"
+        echo "BYOSBOM ${{ inputs.byo-sbom }}"
+        echo "sbom-path=${{ inputs.byo-sbom }}" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Set outputs
+      if: ${{ inputs.byo-sbom == '' }}
       id: outputs
       shell: bash
       run: |
