@@ -1,6 +1,7 @@
 name: 'Nais Sbom Generator'
 description: 'Generate and output SBOM'
 inputs:
+
   ecosystem:
     description: |-
       (Optional) action finds the actual build file in the repository but you can also specify a ecosystem to generate 
@@ -8,37 +9,31 @@ inputs:
       for node e.g. node=npm and for python e.g. python=poetry etc. maven and gradle only supports wrappers. 
       If the application is depending on private repositories, please see 'bring your own sbom' alias 'byo-sbom'
     required: false
+
   image:
     description: |-
       image to sign and upload attestation, must be in the form of <image>:<tag>@<digest>
     required: true
+
   maindir:
     description: |-
       go main directory for sbom generation
     required: false
     default: '.'
+
   context:
     description: |-
       current working directory for sbom generation, defaults to root of the repository
       useful in mono-repos or when the build file is not in the root of the repository
     required: false
     default: '.'
-  byo-sbom:
-    description: |-
-      bring your own SBOM, use existing SBOM file instead of auto generating, must be a json file and 
-      default format is CycloneDX, see: https://github.com/sigstore/cosign/blob/main/doc/cosign_attest.md for more info.
-      If the file is not in the root of the repository, please see 'context'
-    required: false
+
   sbom:
     description: |-
       filename of the SBOM file, defaults to bom.json
     required: false
     default: 'bom.json'
-  type:
-    description: |-
-      type of the SBOM file, defaults to cyclonedx
-    required: false
-    default: 'cyclonedx'
+
   with-dependencies:
     description: |-
       generate ecosystem sbom, defaults to true
@@ -53,13 +48,13 @@ runs:
   using: composite
   steps:
 
-    - name: Export sbom filename
-      run: echo SBOM=${{ inputs.sbom }} >> $GITHUB_ENV
-      shell: bash
-
     - name: Set current context
       run: |
         echo CONTEXT=${{ inputs.context }} >> $GITHUB_ENV
+      shell: bash
+
+    - name: Export sbom filename
+      run: echo SBOM=${{ inputs.sbom }} >> $GITHUB_ENV
       shell: bash
 
     - name: Set eccosystem
@@ -184,23 +179,7 @@ runs:
         cyclonedx-py --"$build_type" -o ${{ env.SBOM }} --format json
         echo "Generated ${{ env.ECOSYSTEM }} ${{ env.SBOM }}"
 
-    - name: Attest with byo-sbom
-      if: ${{ inputs.byo-sbom != '' }}
-      run: |
-        if [ ! -f ${{ inputs.byo-sbom }} ]; then
-          echo "File ${{ inputs.byo-sbom }} not found!"
-          exit 1
-        fi
-        if [[ ${{ inputs.byo-sbom }} != *.json ]]; then
-          echo "File ${{ inputs.byo-sbom }} is not a json file!"
-          exit 1
-        fi
-        echo "BYOSBOM ${{ inputs.byo-sbom }}"
-        echo "sbom-path=${{ inputs.byo-sbom }}" >> $GITHUB_OUTPUT
-      shell: bash
-
     - name: Set outputs
-      if: ${{ inputs.byo-sbom == '' }}
       id: outputs
       shell: bash
       run: |
