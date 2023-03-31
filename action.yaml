@@ -1,0 +1,206 @@
+name: 'Nais Sbom Generator'
+description: 'Generate and output SBOM'
+inputs:
+  ecosystem:
+    description: |-
+      (Optional) action finds the actual build file in the repository but you can also specify a ecosystem to generate 
+      sbom from. Several of ecosystems have different type of build systems, then specify key=value,
+      for node e.g. node=npm and for python e.g. python=poetry etc. maven and gradle only supports wrappers. 
+      If the application is depending on private repositories, please see 'bring your own sbom' alias 'byo-sbom'
+    required: false
+  image:
+    description: |-
+      image to sign and upload attestation, must be in the form of <image>:<tag>@<digest>
+    required: true
+  maindir:
+    description: |-
+      go main directory for sbom generation
+    required: false
+    default: '.'
+  context:
+    description: |-
+      current working directory for sbom generation, defaults to root of the repository
+      useful in mono-repos or when the build file is not in the root of the repository
+    required: false
+    default: '.'
+  byo-sbom:
+    description: |-
+      bring your own SBOM, use existing SBOM file instead of auto generating, must be a json file and 
+      default format is CycloneDX, see: https://github.com/sigstore/cosign/blob/main/doc/cosign_attest.md for more info.
+      If the file is not in the root of the repository, please see 'context'
+    required: false
+  sbom:
+    description: |-
+      filename of the SBOM file, defaults to bom.json
+    required: false
+    default: 'bom.json'
+  type:
+    description: |-
+      type of the SBOM file, defaults to cyclonedx
+    required: false
+    default: 'cyclonedx'
+  with-dependencies:
+    description: |-
+      generate ecosystem sbom, defaults to true
+    default: 'true'
+
+outputs:
+  sbom-path:
+    description: 'generated sbom path'
+    value: ${{ steps.outputs.outputs.sbom-path }}
+
+runs:
+  using: composite
+  steps:
+
+    - name: Export sbom filename
+      run: echo SBOM=${{ inputs.sbom }} >> $GITHUB_ENV
+      shell: bash
+
+    - name: Set current context
+      run: |
+        echo CONTEXT=${{ inputs.context }} >> $GITHUB_ENV
+      shell: bash
+
+    - name: Set eccosystem
+      if: ${{ inputs.ecosystem != '' }}
+      run: |
+        echo ECOSYSTEM=${{ inputs.ecosystem }} >> $GITHUB_ENV
+      shell: bash
+
+    - name: Check Image format
+      run: |
+        if [[ ${{ inputs.image }} != *@sha256:* ]]; then
+          echo "Image must be in the form of <image>@<digest>"
+          exit 1
+        fi
+        echo IMAGE=${{ inputs.image }} >> $GITHUB_ENV
+      shell: bash
+
+    - name: Identify ecosystem
+      if: ${{ inputs.with-dependencies == 'true' && inputs.ecosystem == '' }}
+      run: |
+        if [[ "$(find ${{ env.CONTEXT }} -type f -name 'package-lock.json')" ]]; then
+         echo ECOSYSTEM="node=npm" >> $GITHUB_ENV
+        elif [[ "$(find ${{ env.CONTEXT }} -type f -name 'build.gradle*')" ]]; then
+         echo ECOSYSTEM=gradle >> $GITHUB_ENV
+        elif [[ "$(find ${{ env.CONTEXT }} -type f -name 'pom.xml')" ]]; then
+         echo ECOSYSTEM=maven >> $GITHUB_ENV
+        elif [[ "$(find ${{ env.CONTEXT }} -type f -name 'go.mod')" ]]; then
+         echo ECOSYSTEM=go >> $GITHUB_ENV
+        elif [[ "$(find ${{ env.CONTEXT }} -type f -name 'poetry.lock')" ]]; then
+         echo ECOSYSTEM="python=poetry" >> $GITHUB_ENV
+        elif [[ "$(find ${{ env.CONTEXT }} -type f -name 'Pipfile.lock')" ]]; then
+         echo ECOSYSTEM="python=pip" >> $GITHUB_ENV
+        elif [[ "$(find ${{ env.CONTEXT }} -type f -name 'requirements.txt')" ]]; then
+          echo ECOSYSTEM="python=pip" >> $GITHUB_ENV
+        else
+         echo "No supported build file found in the repository"
+         echo "Action will try to generate sbom from the image with trivy"
+        fi
+      shell: bash
+
+    - name: Use trivy to generate sbom
+      if: ${{ inputs.byo-sbom == '' && env.ECOSYSTEM == '' }}
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: "image"
+        format: "cyclonedx"
+        output: "${{ env.CONTEXT }}/${{ env.SBOM }}"
+        image-ref: "${{ env.IMAGE }}"
+
+    - name: Install Go
+      if: ${{ env.ECOSYSTEM == 'go' }}
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.20.1'
+
+    - name: Install cyclonedx-gomod and generate sbom
+      if: ${{ inputs.byo-sbom == '' && env.ECOSYSTEM == 'go' }}
+      shell: bash
+      run: |
+        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest
+        echo "Installed cyclonedx-gomod"
+        cd $CONTEXT
+        cyclonedx-gomod app -output ./${{ env.SBOM }} -main ${{ inputs.maindir }} -json=true
+        echo "Generated Go ${{ env.SBOM }}"
+
+    - name: Maven CycloneDX sbom
+      if: ${{ inputs.byo-sbom == '' && env.ECOSYSTEM == 'maven' }}
+      shell: bash
+      run: |
+        cd $CONTEXT
+        if [[ ! -f mvnw ]]; then
+          echo "maven wrapper not found, please add it to the repository"
+          exit 1
+        fi
+        
+        ./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.7.5:makeAggregateBom -DoutputFormat=json -DoutputName=bom && \
+        echo "SBOM=target/${{ env.SBOM }}" >> $GITHUB_ENV && echo "Generated Maven ${{ env.SBOM }}"
+
+    - name: Gradle cycloneDX sbom
+      if: ${{ inputs.byo-sbom == '' && env.ECOSYSTEM == 'gradle' }}
+      shell: bash
+      run: |
+        cd $CONTEXT      
+        if [[ ! -f gradlew ]]; then
+          echo "gradle wrapper not found, please add it to the repository"
+          exit 1
+        fi
+        
+        ./gradlew cyclonedxBom && \
+        echo "SBOM=build/reports/${{ env.SBOM }}" >> $GITHUB_ENV && echo "Generated Gradle ${{ env.SBOM }}"
+
+    - name: Npm CycloneDX sbom
+      if: ${{ inputs.byo-sbom == '' && contains(env.ECOSYSTEM, 'node') }}
+      shell: bash
+      run: |
+        eco="${{ env.ECOSYSTEM }}"
+        build_type="${eco##*=}"
+        if [[ "$build_type" == '' ||  "$build_type" != 'npm' ]]; then
+          echo "a project build type is required for node ecosystem"
+          echo "accepted values are npm"
+          echo "yarn is not supported at the moment"
+          exit 1
+        fi
+        cd $CONTEXT
+        npx @cyclonedx/cyclonedx-npm --output-file ${{ env.SBOM }}
+        echo "Generated ${{ env.ECOSYSTEM }} ${{ env.SBOM }}"
+
+    - name: Python CycloneDX sbom
+      if: ${{ inputs.byo-sbom == '' && contains(env.ECOSYSTEM, 'python') }}
+      shell: bash
+      run: |
+        # greedy front trim matches everything up to and including the last colon
+        eco="${{ env.ECOSYSTEM }}"
+        build_type="${eco##*=}"
+        if [[ "$build_type" == '' ||  "$build_type" != 'poetry' && "$build_type" != 'pip' && "$build_type" != 'conda-json' && "$build_type" != 'requirements' ]]; then
+          echo "a project build type is required for python ecosystem"
+          echo "accepted values are pip, poetry, conda-json and requirements"
+          exit 1
+        fi
+        cd $CONTEXT
+        pip install cyclonedx-bom
+        cyclonedx-py --"$build_type" -o ${{ env.SBOM }} --format json
+        echo "Generated ${{ env.ECOSYSTEM }} ${{ env.SBOM }}"
+
+    - name: Attest with byo-sbom
+      if: ${{ inputs.byo-sbom != '' }}
+      run: |
+        if [ ! -f ${{ inputs.context }}/inputs.byo-sbom }} ]; then
+          echo "File ${{ inputs.byo-sbom }} not found!"
+          exit 1
+        fi
+        if [[ ${{ inputs.byo-sbom }} != *.json ]]; then
+          echo "File ${{ inputs.byo-sbom }} is not a json file!"
+          exit 1
+        fi
+        echo "SBOM=${{ inputs.byo-sbom }}" >> $GITHUB_ENV
+        echo "Using BYOSBOM ${{ env.SBOM }}"
+      shell: bash
+
+    - name: Set outputs
+      id: outputs
+      shell: bash
+      run: |
+        echo "sbom-path=${{ env.CONTEXT }}/${{ env.SBOM }}" >> $GITHUB_OUTPUT

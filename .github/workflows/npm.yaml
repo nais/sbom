@@ -1,0 +1,36 @@
+name: Npm sbom Generation
+on: [ push ]
+
+env:
+  IMAGE: ttl.sh/salsa/sbom/npm
+  CONTEXT: ci/node
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: ${{ env.IMAGE }}:1h
+          context: ./${{ env.CONTEXT }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Generate, and output SBOM
+        uses: ./
+        id: sbom
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
+          context: ${{ env.CONTEXT }}/npm
+          with-dependencies: true
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v2
+        with:
+          name: sbom
+          path: ${{ steps.sbom.outputs.sbom-path }}
