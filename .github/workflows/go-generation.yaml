@@ -24,7 +24,7 @@ jobs:
         id: sbom
         with:
           image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
-          context: ${{ env.CONTEXT }}
+          build-context: ${{ env.CONTEXT }}
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v3

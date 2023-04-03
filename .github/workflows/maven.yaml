@@ -1,0 +1,30 @@
+name: Maven Salsa Action
+on: [ push ]
+
+env:
+  IMAGE: ttl.sh/salsa/sbom/maventestapp
+  CONTEXT: ci/jvm
+
+jobs:
+  maven:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        id: docker_build
+        with:
+          push: true
+          tags: ${{ env.IMAGE }}:1h
+          context: ./${{ env.CONTEXT }}
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Generate, sign and upload SBOM
+        uses: ./
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
+          build-context: ${{ env.CONTEXT }}/maven

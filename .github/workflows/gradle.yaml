@@ -1,12 +1,12 @@
-name: Npm sbom Generation
+name: Gradle Salsa Action
 on: [ push ]
 
 env:
-  IMAGE: ttl.sh/salsa/sbom/npm
-  CONTEXT: ci/node
+  IMAGE: ttl.sh/salsa/sbom/gradletestapp
+  CONTEXT: ci/jvm
 
 jobs:
-  npm:
+  gradle:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,19 +17,16 @@ jobs:
           push: true
           tags: ${{ env.IMAGE }}:1h
           context: ./${{ env.CONTEXT }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
 
-      - name: Generate, and output SBOM
+      - uses: actions/setup-java@v3
+        with:
+          java-version: 15
+          distribution: 'zulu'
+          cache: 'gradle'
+
+      - name: Generate, sign and upload SBOM
         uses: ./
-        id: sbom
         with:
           image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
-          build-context: ${{ env.CONTEXT }}/npm
-
-      - name: Upload SBOM
-        uses: actions/upload-artifact@v3
-        with:
-          name: sbom
-          path: ${{ steps.sbom.outputs.sbom-path }}
+          build-context: ${{ env.CONTEXT }}/gradle
+          key: ${{ env.KEY }}
