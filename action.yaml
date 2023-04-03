@@ -110,7 +110,7 @@ runs:
           echo "maven wrapper not found, please add it to the repository"
           exit 1
         fi
-        # cd ${{ inputs.build-context }}
+        cd ${{ inputs.build-context }}
         ./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.7.5:makeAggregateBom -DoutputFormat=json -DoutputName=bom && \
         echo "GENERATED_SBOM_PATH=target/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Maven ${{ inputs.sbom }}"
 
@@ -122,7 +122,7 @@ runs:
           echo "gradle wrapper not found, please add it to the repository"
           exit 1
         fi
-        # cd ${{ inputs.build-context }}
+        cd ${{ inputs.build-context }}
         ./gradlew cyclonedxBom && \
         echo "GENERATED_SBOM_PATH=build/reports/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Gradle ${{ inputs.sbom }}"
 
