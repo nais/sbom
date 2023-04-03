@@ -93,6 +93,7 @@ runs:
         cd ${{ inputs.build-context }}
         cyclonedx-gomod app -output ./${{ inputs.sbom }} -main=${{ inputs.go-main-dir }} -json=true
         echo "Generated Go ${{ inputs.sbom }}"
+        echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}"
 
     - name: Maven CycloneDX sbom
       if: ${{ env.ECOSYSTEM == 'maven' }}
@@ -104,7 +105,7 @@ runs:
         fi
         cd ${{ inputs.build-context }}
         ./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.7.5:makeAggregateBom -DoutputFormat=json -DoutputName=bom && \
-        echo "SBOM=target/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Maven ${{ inputs.sbom }}"
+        echo "GENERATED_SBOM_PATH=target/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Maven ${{ inputs.sbom }}"
 
     - name: Gradle cycloneDX sbom
       if: ${{ env.ECOSYSTEM == 'gradle' }}
@@ -116,7 +117,7 @@ runs:
         fi
         cd ${{ inputs.build-context }}
         ./gradlew cyclonedxBom && \
-        echo "SBOM=build/reports/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Gradle ${{ inputs.sbom }}"
+        echo "GENERATED_SBOM_PATH=build/reports/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Gradle ${{ inputs.sbom }}"
 
     - name: Npm CycloneDX sbom
       if: ${{ contains(env.ECOSYSTEM, 'node') }}
@@ -133,6 +134,7 @@ runs:
         cd ${{ inputs.build-context }}
         npx @cyclonedx/cyclonedx-npm --output-file ${{ inputs.sbom }}
         echo "Generated ${{ env.ECOSYSTEM }} ${{ inputs.sbom }}"
+        echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}"
 
     - name: Python CycloneDX sbom
       if: ${{ contains(env.ECOSYSTEM, 'python') }}
@@ -150,9 +152,10 @@ runs:
         pip install cyclonedx-bom
         cyclonedx-py --"$build_type" -o ${{ inputs.sbom }} --format json
         echo "Generated ${{ env.ECOSYSTEM }} ${{ inputs.sbom }}"
+        echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}"
 
     - name: Set outputs
       id: outputs
       shell: bash
       run: |
-        echo "sbom-path=${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_OUTPUT
+        echo "sbom-path=${{ env.GENERATED_SBOM_PATH }}" >> $GITHUB_OUTPUT
