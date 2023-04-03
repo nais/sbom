@@ -23,8 +23,15 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Generate, sign and upload SBOM
+      - name: Generate and output SBOM
         uses: ./
+        id: sbom
         with:
           image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
           build-context: ${{ env.CONTEXT }}/maven
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: ${{ steps.sbom.outputs.sbom-path }}

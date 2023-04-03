@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 16
 
-      - name: Generate, and output SBOM
+      - name: Generate and output SBOM
         uses: ./
         id: sbom
         with:

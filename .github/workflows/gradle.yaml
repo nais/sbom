@@ -24,9 +24,15 @@ jobs:
           distribution: 'zulu'
           cache: 'gradle'
 
-      - name: Generate, sign and upload SBOM
+      - name: Generate and output SBOM
+        id: sbom
         uses: ./
         with:
           image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
           build-context: ${{ env.CONTEXT }}/gradle
-          key: ${{ env.KEY }}
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: ${{ steps.sbom.outputs.sbom-path }}
