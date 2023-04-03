@@ -25,6 +25,7 @@ jobs:
         with:
           image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
           context: ${{ env.CONTEXT }}
+          with-dependencies: false
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v3
