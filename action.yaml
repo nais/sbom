@@ -112,7 +112,7 @@ runs:
         fi
         cd ${{ inputs.build-context }}
         ./mvnw org.cyclonedx:cyclonedx-maven-plugin:2.7.5:makeAggregateBom -DoutputFormat=json -DoutputName=bom && \
-        echo "GENERATED_SBOM_PATH=target/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Maven ${{ inputs.sbom }}"
+        echo "GENERATED_SBOM_PATH=${{ inputs.build-context }}/target/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Maven ${{ inputs.sbom }}"
 
     - name: Gradle cycloneDX sbom
       if: ${{ env.ECOSYSTEM == 'gradle' }}
@@ -124,7 +124,7 @@ runs:
         fi
         cd ${{ inputs.build-context }}
         ./gradlew cyclonedxBom && \
-        echo "GENERATED_SBOM_PATH=build/reports/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Gradle ${{ inputs.sbom }}"
+        echo "GENERATED_SBOM_PATH=${{ inputs.build-context }}/build/reports/${{ inputs.sbom }}" >> $GITHUB_ENV && echo "Generated Gradle ${{ inputs.sbom }}"
 
     - name: Npm CycloneDX sbom
       if: ${{ contains(env.ECOSYSTEM, 'node') }}
