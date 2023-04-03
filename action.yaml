@@ -78,6 +78,13 @@ runs:
         output: "${{ inputs.build-context }}/${{ inputs.sbom }}"
         image-ref: "${{ inputs.image }}"
 
+    - name: Ensure trivy sbom exists
+      if: ${{ env.ECOSYSTEM == '' }}
+      shell: bash
+      run: |
+        echo "Generated sbom from image with trivy"
+        echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
+
     - name: Install Go
       if: ${{ env.ECOSYSTEM == 'go' }}
       uses: actions/setup-go@v3
