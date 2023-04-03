@@ -98,7 +98,7 @@ runs:
         go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest
         echo "Installed cyclonedx-gomod"
         cd ${{ inputs.build-context }}
-        cyclonedx-gomod app -output ./${{ inputs.sbom }} -main=${{ inputs.go-main-dir }} -json=true
+        cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ${{ inputs.go-main-dir }} -json=true
         echo "Generated Go ${{ inputs.sbom }}"
         echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
 
