@@ -98,11 +98,11 @@ runs:
         main_go_path="$(find  ~+ -type f -name 'main.go')"
         if [[ -z "${{ inputs.go-main-dir }}" ]]; then
           echo "go-main-dir is not set, trying to find main.go"
-          if [[ -z "${{ main_go_path }}" ]]; then
+          if [[ -z "$main_go_path" ]]; then
             echo "main.go not found, please specify 'go-main-dir'"
             exit 1
           fi
-          if [[ $(echo "${{ main_go_path }}" | wc -l) -gt 1 ]]; then
+          if [[ $(echo "$main_go_path" | wc -l) -gt 1 ]]; then
             echo "main.go found in multiple directories, please specify 'go-main-dir'"
             exit 1
           fi
@@ -110,8 +110,8 @@ runs:
           main_go_path="${{ inputs.go-main-dir }}"
         fi
         
-        echo "main.go found in ${{ main_go_path }}"
-        echo "GO_MAIN_DIR=${{ main_go_path }}" >> $GITHUB_ENV
+        echo "main.go found in $main_go_path"
+        echo "GO_MAIN_DIR=$main_go_path" >> $GITHUB_ENV
         fi
 
     - name: Install cyclonedx-gomod and generate sbom
