@@ -111,7 +111,7 @@ runs:
         fi
         
         echo "main.go found in $main_go_path"
-        echo "GO_MAIN_DIR=$main_go_path" >> $GITHUB_ENV
+        echo "GO_MAIN_DIR=./$main_go_path" >> $GITHUB_ENV
 
     - name: Install cyclonedx-gomod and generate sbom
       if: ${{ env.ECOSYSTEM == 'go' }}
@@ -120,7 +120,7 @@ runs:
         go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.3.0
         echo "Installed cyclonedx-gomod"
         cd ${{ inputs.build-context }}
-        cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ./${{ env.GO_MAIN_DIR }} -json=true
+        cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ${{ env.GO_MAIN_DIR }} -json=true
         echo "Generated Go ${{ inputs.sbom }}"
         echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
 
