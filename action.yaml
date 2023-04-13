@@ -117,7 +117,7 @@ runs:
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
       run: |
-        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@1.3.0
+        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.3.0
         echo "Installed cyclonedx-gomod"
         cd ${{ inputs.build-context }}
         cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ${{ env.GO_MAIN_DIR }} -json=true
