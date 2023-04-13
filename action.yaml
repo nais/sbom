@@ -112,7 +112,6 @@ runs:
         
         echo "main.go found in $main_go_path"
         echo "GO_MAIN_DIR=$main_go_path" >> $GITHUB_ENV
-        fi
 
     - name: Install cyclonedx-gomod and generate sbom
       if: ${{ env.ECOSYSTEM == 'go' }}
