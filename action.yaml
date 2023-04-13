@@ -24,7 +24,7 @@ inputs:
     description: |-
       main directory for go ecosystem
     required: false
-    default: '.'
+    default: ''
 
   sbom:
     description: |-
@@ -91,14 +91,37 @@ runs:
       with:
         go-version: '1.20.1'
 
+    - name: Find main.go
+      if: ${{ env.ECOSYSTEM == 'go' }}
+      shell: bash
+      run: |
+        main_go_path="$(find  ~+ -type f -name 'main.go')"
+        if [[ -z "${{ inputs.go-main-dir }}" ]]; then
+          echo "go-main-dir is not set, trying to find main.go"
+          if [[ -z "${{ main_go_path }}" ]]; then
+            echo "main.go not found, please specify 'go-main-dir'"
+            exit 1
+          fi
+          if [[ $(echo "${{ main_go_path }}" | wc -l) -gt 1 ]]; then
+            echo "main.go found in multiple directories, please specify 'go-main-dir'"
+            exit 1
+          fi
+        else
+          main_go_path="${{ inputs.go-main-dir }}"
+        fi
+        
+        echo "main.go found in ${{ main_go_path }}"
+        echo "GO_MAIN_DIR=${{ main_go_path }}" >> $GITHUB_ENV
+        fi
+
     - name: Install cyclonedx-gomod and generate sbom
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
       run: |
-        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest
+        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@1.3.0
         echo "Installed cyclonedx-gomod"
         cd ${{ inputs.build-context }}
-        cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ${{ inputs.go-main-dir }} -json=true
+        cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ${{ env.GO_MAIN_DIR }} -json=true
         echo "Generated Go ${{ inputs.sbom }}"
         echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
 
