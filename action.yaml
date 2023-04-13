@@ -95,7 +95,7 @@ runs:
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
       run: |
-        main_go_path="$(find  ~+ -type f -name 'main.go')"
+        main_go_path="$(find  ${{ inputs.build-context }} -type f -name 'main.go')"
         if [[ -z "${{ inputs.go-main-dir }}" ]]; then
           echo "go-main-dir is not set, trying to find main.go"
           if [[ -z "$main_go_path" ]]; then
