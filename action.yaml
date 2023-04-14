@@ -89,7 +89,7 @@ runs:
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
       run: |
-        if [[ command -v go >/dev/null 2>&1 ]]; then
+        if [[ "$(command -v go >/dev/null 2>&1) ]]; then
             echo "Go is already installed"
             echo "INSTALL_GO=false" >> $GITHUB_ENV
         else
@@ -108,7 +108,7 @@ runs:
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
       run: |
-        main_go_path="$(find  ${{ inputs.build-context }} -type f -name 'main.go')"
+        main_go_path="$(find ${{ inputs.build-context }} -type f -name 'main.go')"
         if [[ -z "${{ inputs.go-main-dir }}" ]]; then
           echo "go-main-dir is not set, trying to find main.go"
           if [[ -z "$main_go_path" ]]; then
