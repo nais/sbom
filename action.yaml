@@ -90,6 +90,7 @@ runs:
       uses: actions/setup-go@v4
       with:
         go-version-file: ${{ inputs.build-context }}/go.mod
+        cache-dependency-path: ${{ inputs.build-context }}/go.sum
         cache: true
 
     - name: Find main.go

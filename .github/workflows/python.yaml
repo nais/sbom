@@ -1,0 +1,34 @@
+name: Python Salsa Action
+on: [ push ]
+
+env:
+  IMAGE: ttl.sh/salsa/sbom/python
+  CONTEXT: ci/python
+
+jobs:
+  build-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: ${{ env.IMAGE }}:1h
+          context: ./${{ env.CONTEXT }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.2
+
+      - name: Generate, sign and upload SBOM
+        uses: ./
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
+          build-context: ${{ env.CONTEXT }}
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: ${{ steps.sbom.outputs.sbom-path }}

@@ -1,0 +1,13 @@
+# Python
+__pycache__
+*.pyc
+.venv
+
+# Generated
+/.coverage
+/dist/
+
+# IDE
+/.vscode/*
+!/.vscode/settings.json
+
