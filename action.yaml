@@ -89,7 +89,7 @@ runs:
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
       run: |
-        if [[ env.GOMOD == '' ]]; then
+        if [[ ! command -v go >/dev/null 2>&1 ]]; then
           echo "INSTALL_GO=true" >> $GITHUB_ENV
         fi
 
