@@ -87,9 +87,10 @@ runs:
 
     - name: Install Go
       if: ${{ env.ECOSYSTEM == 'go' }}
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
-        go-version: '1.20.1'
+        go-version-file: ${{ inputs.build-context }}/go.mod
+        cache: true
 
     - name: Find main.go
       if: ${{ env.ECOSYSTEM == 'go' }}
@@ -163,7 +164,7 @@ runs:
           exit 1
         fi
         cd ${{ inputs.build-context }}
-        npx @cyclonedx/cyclonedx-npm --output-file ${{ inputs.sbom }}
+        npx @cyclonedx/cyclonedx-npm@1.9.2 --output-file ${{ inputs.sbom }}
         echo "Generated ${{ env.ECOSYSTEM }} ${{ inputs.sbom }}"
         echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
 
@@ -180,7 +181,7 @@ runs:
           exit 1
         fi
         cd ${{ inputs.build-context }}
-        pip install cyclonedx-bom
+        pip install cyclonedx-bom==v3.11.0
         cyclonedx-py --"$build_type" -o ${{ inputs.sbom }} --format json
         echo "Generated ${{ env.ECOSYSTEM }} ${{ inputs.sbom }}"
         echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
