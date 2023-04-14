@@ -119,7 +119,7 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.build-context }}
-        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.3.0
+        go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.4.0
         echo "Installed cyclonedx-gomod"
         cyclonedx-gomod app -output ./${{ inputs.sbom }} -main ./${{ env.GO_MAIN_DIR }} -json=true
         echo "Generated Go ${{ inputs.sbom }}"
