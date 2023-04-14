@@ -23,6 +23,7 @@ jobs:
 
       - name: Generate, sign and upload SBOM
         uses: ./
+        id: sbom
         with:
           image: ${{ env.IMAGE }}@${{ steps.docker_build.outputs.digest }}
           build-context: ${{ env.CONTEXT }}

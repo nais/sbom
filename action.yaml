@@ -85,14 +85,6 @@ runs:
         echo "Generated sbom from image with trivy"
         echo GENERATED_SBOM_PATH="${{ inputs.build-context }}/${{ inputs.sbom }}" >> $GITHUB_ENV
 
-    - name: Install Go
-      if: ${{ env.ECOSYSTEM == 'go' }}
-      uses: actions/setup-go@v4
-      with:
-        go-version-file: ${{ inputs.build-context }}/go.mod
-        cache-dependency-path: ${{ inputs.build-context }}/go.sum
-        cache: true
-
     - name: Find main.go
       if: ${{ env.ECOSYSTEM == 'go' }}
       shell: bash
